@@ -12,6 +12,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql  # Initialize database with schema
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -21,7 +22,7 @@ services:
   # Node.js application
   app:
     build:
-      context: ..
+      context: ..  # Go up one directory level to find the root
       dockerfile: ./docker/Dockerfile
     container_name: city-game-app
     restart: unless-stopped
@@ -38,9 +39,9 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ../:/app
+      - ../:/app  # Mount from parent directory
       - /app/node_modules
-    command: npm run dev
+    command: sh -c "npm install && npm run load-csv && npm run dev"
 
 volumes:
   postgres_data:

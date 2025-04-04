@@ -6,6 +6,7 @@ WORKDIR /app
 
 # Copy package.json and package-lock.json
 COPY package*.json ./
+COPY cities.csv ./
 
 # Install dependencies
 RUN npm install

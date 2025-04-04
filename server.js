@@ -15,65 +15,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Add a data seeding script for development
 async function seedDatabaseWithSampleData() {
-  const client = await pool.connect();
+  // Import and run the CSV loader instead of manual seeding
   try {
-    // Check if data already exists
-    const countResult = await client.query('SELECT COUNT(*) FROM countries');
-    if (parseInt(countResult.rows[0].count) > 0) {
-      console.log('Database already has data, skipping seed');
-      return;
-    }
-
-    await client.query('BEGIN');
-    
-    // Insert sample countries
-    await client.query(`
-      INSERT INTO countries (code, name) VALUES
-      ('US', 'United States'),
-      ('CA', 'Canada'),
-      ('GB', 'United Kingdom'),
-      ('FR', 'France'),
-      ('DE', 'Germany'),
-      ('JP', 'Japan'),
-      ('AU', 'Australia'),
-      ('BR', 'Brazil'),
-      ('IN', 'India'),
-      ('CN', 'China')
-    `);
-    
-    // Insert sample cities
-    await client.query(`
-      INSERT INTO cities (name, country_code, latitude, longitude, population) VALUES
-      ('New York', 'US', 40.7128, -74.0060, 8400000),
-      ('Los Angeles', 'US', 34.0522, -118.2437, 3970000),
-      ('Chicago', 'US', 41.8781, -87.6298, 2700000),
-      ('Toronto', 'CA', 43.6532, -79.3832, 2800000),
-      ('Vancouver', 'CA', 49.2827, -123.1207, 630000),
-      ('London', 'GB', 51.5074, -0.1278, 8900000),
-      ('Manchester', 'GB', 53.4808, -2.2426, 550000),
-      ('Paris', 'FR', 48.8566, 2.3522, 2200000),
-      ('Lyon', 'FR', 45.7640, 4.8357, 520000),
-      ('Berlin', 'DE', 52.5200, 13.4050, 3700000),
-      ('Munich', 'DE', 48.1351, 11.5820, 1500000),
-      ('Tokyo', 'JP', 35.6762, 139.6503, 13900000),
-      ('Osaka', 'JP', 34.6937, 135.5023, 2700000),
-      ('Sydney', 'AU', -33.8688, 151.2093, 5300000),
-      ('Melbourne', 'AU', -37.8136, 144.9631, 5000000),
-      ('Rio de Janeiro', 'BR', -22.9068, -43.1729, 6700000),
-      ('Sao Paulo', 'BR', -23.5505, -46.6333, 12300000),
-      ('Mumbai', 'IN', 19.0760, 72.8777, 12500000),
-      ('Delhi', 'IN', 28.6139, 77.2090, 11000000),
-      ('Beijing', 'CN', 39.9042, 116.4074, 21500000),
-      ('Shanghai', 'CN', 31.2304, 121.4737, 26300000)
-    `);
-    
-    await client.query('COMMIT');
-    console.log('Sample data seeded successfully');
-  } catch (e) {
-    await client.query('ROLLBACK');
-    console.error('Error seeding database:', e);
-  } finally {
-    client.release();
+    console.log('Attempting to load data from CSV file...');
+    require('./csvLoader');
+  } catch (err) {
+    console.error('Error loading CSV data:', err);
   }
 }
 
@@ -109,23 +56,30 @@ async function initializeDatabase() {
   try {
     await client.query('BEGIN');
     
-    // Create countries table
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS countries (
-        code CHAR(2) PRIMARY KEY,
-        name VARCHAR(100) NOT NULL
-      )
-    `);
-    
-    // Create cities table
+    // Create cities table with fields matching the CSV
     await client.query(`
       CREATE TABLE IF NOT EXISTS cities (
         id SERIAL PRIMARY KEY,
-        name VARCHAR(100) NOT NULL,
-        country_code CHAR(2) REFERENCES countries(code),
-        latitude DECIMAL(9,6) NOT NULL,
-        longitude DECIMAL(9,6) NOT NULL,
-        population INTEGER NOT NULL DEFAULT 0
+        city VARCHAR(100) NOT NULL,
+        city_ascii VARCHAR(100) NOT NULL,
+        city_alt VARCHAR(100),
+        lat DECIMAL(9,6) NOT NULL,
+        lng DECIMAL(9,6) NOT NULL,
+        country VARCHAR(100) NOT NULL,
+        iso2 CHAR(2) NOT NULL,
+        iso3 CHAR(3) NOT NULL,
+        admin_name VARCHAR(100),
+        admin_name_ascii VARCHAR(100),
+        admin_code VARCHAR(50),
+        admin_type VARCHAR(50),
+        capital VARCHAR(50),
+        density DECIMAL(15,2),
+        population BIGINT,
+        population_proper BIGINT,
+        ranking INT,
+        timezone VARCHAR(50),
+        same_name BOOLEAN,
+        original_id VARCHAR(50)
       )
     `);
     
@@ -184,9 +138,8 @@ app.get('/api/cities/random', async (req, res) => {
     const excludeId = req.query.exclude;
     
     let query = `
-      SELECT c.id, c.name, co.name as country
+      SELECT c.id, c.city as name, c.country
       FROM cities c
-      JOIN countries co ON c.country_code = co.code
       WHERE 1=1
     `;
     
@@ -213,9 +166,8 @@ app.get('/api/cities/:id', async (req, res) => {
     const { id } = req.params;
     
     const query = `
-      SELECT c.id, c.name, c.latitude, c.longitude, co.name as country
+      SELECT c.id, c.city as name, c.lat as latitude, c.lng as longitude, c.country
       FROM cities c
-      JOIN countries co ON c.country_code = co.code
       WHERE c.id = $1
     `;
     
@@ -242,10 +194,9 @@ app.get('/api/cities/search', async (req, res) => {
     }
     
     const query = `
-      SELECT c.id, c.name, c.latitude, c.longitude, co.name as country
+      SELECT c.id, c.city as name, c.lat as latitude, c.lng as longitude, c.country
       FROM cities c
-      JOIN countries co ON c.country_code = co.code
-      WHERE LOWER(c.name) = LOWER($1)
+      WHERE LOWER(c.city) = LOWER($1) OR LOWER(c.city_ascii) = LOWER($1)
       LIMIT 1
     `;
     
@@ -272,16 +223,15 @@ app.get('/api/cities/autocomplete', async (req, res) => {
     }
     
     const sqlQuery = `
-      SELECT c.id, c.name, co.name as country
+      SELECT c.id, c.city as name, c.country
       FROM cities c
-      JOIN countries co ON c.country_code = co.code
-      WHERE LOWER(c.name) LIKE LOWER($1)
+      WHERE LOWER(c.city) LIKE LOWER($1) OR LOWER(c.city_ascii) LIKE LOWER($1)
       ORDER BY 
-        CASE WHEN LOWER(c.name) = LOWER($2) THEN 0
-             WHEN LOWER(c.name) LIKE LOWER($2 || '%') THEN 1
+        CASE WHEN LOWER(c.city) = LOWER($2) THEN 0
+             WHEN LOWER(c.city) LIKE LOWER($2 || '%') THEN 1
              ELSE 2
         END,
-        population DESC
+        population DESC NULLS LAST
       LIMIT 10
     `;
     
@@ -396,23 +346,31 @@ app.post('/api/cities/random', async (req, res) => {
     const { countries, minPopulation, exclude } = req.body;
     
     let query = `
-      SELECT c.id, c.name, c.latitude, c.longitude, co.name as country
+      SELECT c.id, c.city as name, c.lat as latitude, c.lng as longitude, c.country
       FROM cities c
-      JOIN countries co ON c.country_code = co.code
-      WHERE c.population >= $1
+      WHERE 1=1
     `;
     
-    const params = [minPopulation || 0];
+    const params = [];
+    let paramCounter = 1;
+    
+    // Add population filter if provided
+    if (minPopulation) {
+      query += ` AND (c.population >= ${paramCounter} OR c.population_proper >= ${paramCounter})`;
+      params.push(minPopulation);
+      paramCounter++;
+    }
     
     // Add country filter if provided
     if (countries && countries.length > 0) {
-      query += ` AND c.country_code IN (${countries.map((_, i) => `${i + 2}`).join(',')})`;
+      query += ` AND c.iso2 IN (${countries.map((_, i) => `${paramCounter + i}`).join(',')})`;
       params.push(...countries);
+      paramCounter += countries.length;
     }
     
     // Exclude cities that have already been used
     if (exclude && exclude.length > 0) {
-      query += ` AND c.id NOT IN (${exclude.map((_, i) => `${params.length + i + 1}`).join(',')})`;
+      query += ` AND c.id NOT IN (${exclude.map((_, i) => `${paramCounter + i}`).join(',')})`;
       params.push(...exclude);
     }
     

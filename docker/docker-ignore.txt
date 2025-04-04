@@ -19,6 +19,10 @@ yarn-error.log*
 Dockerfile
 docker-compose*.yml
 
+# CSV data files (except our main cities.csv)
+*.csv
+!cities.csv
+
 # Git files
 .git
 .gitignore

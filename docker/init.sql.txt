@@ -1,0 +1,55 @@
+-- The database is created by PostgreSQL initialization
+-- This script will run automatically when the container starts
+
+-- Create tables for the city guessing game
+CREATE TABLE IF NOT EXISTS cities (
+  id SERIAL PRIMARY KEY,
+  city VARCHAR(100) NOT NULL,
+  city_ascii VARCHAR(100) NOT NULL,
+  city_alt VARCHAR(100),
+  lat DECIMAL(9,6) NOT NULL,
+  lng DECIMAL(9,6) NOT NULL,
+  country VARCHAR(100) NOT NULL,
+  iso2 CHAR(2) NOT NULL,
+  iso3 CHAR(3) NOT NULL,
+  admin_name VARCHAR(100),
+  admin_name_ascii VARCHAR(100),
+  admin_code VARCHAR(50),
+  admin_type VARCHAR(50),
+  capital VARCHAR(50),
+  density DECIMAL(15,2),
+  population BIGINT,
+  population_proper BIGINT,
+  ranking INT,
+  timezone VARCHAR(50),
+  same_name BOOLEAN,
+  original_id VARCHAR(50)
+);
+
+-- Create scores table
+CREATE TABLE IF NOT EXISTS scores (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(50) NOT NULL,
+  score INTEGER NOT NULL,
+  game_mode VARCHAR(20) NOT NULL,
+  rounds INTEGER NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create guesses table to store detailed game history
+CREATE TABLE IF NOT EXISTS guesses (
+  id SERIAL PRIMARY KEY,
+  score_id INTEGER REFERENCES scores(id) ON DELETE CASCADE,
+  round_number INTEGER NOT NULL,
+  actual_city_id INTEGER REFERENCES cities(id),
+  guessed_city_id INTEGER REFERENCES cities(id),
+  distance DECIMAL(10,2) NOT NULL,
+  points INTEGER NOT NULL
+);
+
+-- Add indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_cities_iso2 ON cities(iso2);
+CREATE INDEX IF NOT EXISTS idx_cities_population ON cities(population);
+CREATE INDEX IF NOT EXISTS idx_cities_name ON cities(city, city_ascii);
+CREATE INDEX IF NOT EXISTS idx_scores_game_mode ON scores(game_mode);
+CREATE INDEX IF NOT EXISTS idx_guesses_score_id ON guesses(score_id);
