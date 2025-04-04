@@ -1,0 +1,284 @@
+/* styles.css - Main stylesheet for City Guessing Game */
+
+/* Base styles */
+:root {
+  --primary-color: #2c3e50;
+  --secondary-color: #3498db;
+  --accent-color: #e74c3c;
+  --light-color: #ecf0f1;
+  --dark-color: #34495e;
+  --success-color: #2ecc71;
+  --warning-color: #f39c12;
+  --border-radius: 4px;
+  --box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  color: var(--dark-color);
+  background-color: var(--light-color);
+}
+
+/* Container styles */
+.game-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Screen styles */
+.screen {
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.hidden {
+  display: none;
+}
+
+/* Heading styles */
+h1 {
+  text-align: center;
+  color: var(--primary-color);
+  margin-bottom: 30px;
+}
+
+h2 {
+  color: var(--primary-color);
+  margin-bottom: 20px;
+}
+
+h3 {
+  color: var(--dark-color);
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+/* Form control styles */
+.form-group {
+  margin-bottom: 15px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+
+.input-field, .select-field {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: var(--border-radius);
+  font-size: 16px;
+}
+
+.input-field:focus, .select-field:focus {
+  outline: none;
+  border-color: var(--secondary-color);
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+select[multiple] {
+  height: 150px;
+}
+
+.checkbox-group, .radio-group {
+  margin-bottom: 10px;
+}
+
+.checkbox-group input, .radio-group input {
+  margin-right: 10px;
+}
+
+/* Button styles */
+.btn {
+  display: inline-block;
+  padding: 10px 20px;
+  margin: 5px 0;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+.btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.primary-btn {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+.primary-btn:hover:not(:disabled) {
+  background-color: #2980b9;
+  transform: translateY(-2px);
+}
+
+.secondary-btn {
+  background-color: var(--light-color);
+  color: var(--dark-color);
+  border: 1px solid #ddd;
+}
+
+.secondary-btn:hover:not(:disabled) {
+  background-color: #ddd;
+  transform: translateY(-2px);
+}
+
+/* Map styles */
+#map-container {
+  height: 400px;
+  margin: 20px 0;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+}
+
+/* Game header styles */
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.score-display, .round-display {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+/* Guess container styles */
+.guess-container {
+  margin-top: 20px;
+}
+
+.input-container {
+  margin-bottom: 15px;
+}
+
+/* Autocomplete styles */
+#autocomplete-suggestions {
+  position: absolute;
+  background-color: white;
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  box-shadow: var(--box-shadow);
+  border: 1px solid #ddd;
+  border-top: none;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  z-index: 1000;
+}
+
+.suggestion {
+  padding: 10px;
+  cursor: pointer;
+}
+
+.suggestion:hover {
+  background-color: var(--light-color);
+}
+
+/* Result styles */
+.result-details {
+  margin: 20px 0;
+  font-size: 18px;
+}
+
+.result-details p {
+  margin-bottom: 10px;
+}
+
+/* Game over styles */
+.final-score {
+  font-size: 24px;
+  font-weight: 600;
+  text-align: center;
+  margin: 20px 0;
+  color: var(--primary-color);
+}
+
+/* Guesses table styles */
+.guesses-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+}
+
+.guesses-table th, .guesses-table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: left;
+}
+
+.guesses-table th {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.guesses-table tr:nth-child(even) {
+  background-color: var(--light-color);
+}
+
+/* Marker icons */
+.marker-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.marker-icon.actual {
+  background-color: var(--accent-color);
+}
+
+.marker-icon.guess {
+  background-color: var(--secondary-color);
+}
+
+/* Settings styles */
+.settings-group {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #ddd;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .game-container {
+    padding: 10px;
+  }
+  
+  #map-container {
+    height: 300px;
+  }
+  
+  .btn {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  
+  .game-header {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .score-display, .round-display {
+    margin-bottom: 10px;
+  }
+}
